@@ -55,15 +55,14 @@ if cor_in:
 
 		dict_cor[line_split[0]] = line_split[1].rstrip("\n")
 
-
 ###############################
 # Dict names
 
 names_input = open(names_in,'r')
 dict_names = {}
 order_acc_in_file = {}
-# Fichier 'names_in' dans un dicitionnaire. Key : Groupe qui debute par un # (#officinarum) ; Sub-key : Nom accession appartenant a ce groupe (Off_SRR6680698) ;
-# Value : donnee du plymorphisme (./.:24,0,0:24:0) actualise chaque ligne du vcf
+# File 'names_in' in a dictionnary. Key : Group start wirh a # (#officinarum) ; Sub-key : Name of acc belonging to the group (ex: Off_SRR6680698) ;
+# Value : polymorphism data (ex :./.:24,0,0:24:0) updated each line of the vcf
 
 for line in names_input:
 	if line != '\n' :
@@ -209,17 +208,17 @@ colors_border_THICK = xlwt.easyxf('borders: top THICK; pattern: pattern solid, f
 #######################################
 
 
-order_acc = {} # Key : Nombre correspond a la la position d'apparition dans le vcf ; Valeur : Nom de l'accession (ex: {0: 'Sh_182G15', 1: 'Spont_SRR6680826'} )
+order_acc = {} # Key : Number corresponding to position of appearance in the vcf ; Value : Name of the accession (ex: {0: 'Sh_182G15', 1: 'Spont_SRR6680826'} )
 column_tab = 0
 
 for line in vcf_input:
-	#Copie entete
+	#Copy heading
 	if(line[0] == '#' and line[1] == '#'):
 		vcf_output.write(line)
 	else:
 		line_split = re.split(r'\t+', line)
 
-		#Intialisation ligne avec accessions
+		#line intialisation with accessions
 		if(line_split[0] == '#CHROM'):
 			cpt = 0
 			for word in line_split:
@@ -256,14 +255,14 @@ for line in vcf_input:
 
 
 
-		##Etude SNP	
+		##SNP study
 		else :
 
 
 			cpt = 0
 			for word in line_split:
-				if cpt > 8 : # decalage jusqu'a la premiere donnee de type ./.:24,0,0:24:0
-					for key in dict_names: #mise a jour dict_names
+				if cpt > 8 : # shift until first data of type ./.:24,0,0:24:0
+					for key in dict_names: #update dict_names
 						if(word[-1:] == '\n') :
 							if order_acc[cpt-9] in dict_names[key]:
 								dict_names[key][order_acc[cpt-9]]=word[:-1]
@@ -272,7 +271,7 @@ for line in vcf_input:
 								dict_names[key][order_acc[cpt-9]]=word
 				cpt+=1
 
-			stats = {} # Key : Groupe ; Sub-key : donnee de type ./. ou 0/1 ; Value : nb d'acessions de ce type
+			stats = {} # Key : Groupe ; Sub-key : data of type ./. ou 0/1 ; Value : number of accs of this type
 			for key in dict_names:
 				stats[key] = {}
 				for acc in dict_names[key]:
@@ -282,10 +281,7 @@ for line in vcf_input:
 						else:
 							stats[key][dict_names[key][acc][:3]] = 1
 
-
-
-
-			# Calcule le nombre d'accessions avec une donnee
+			# Compute the number of accs with a data
 			val_acc = 0
 			val_bac = 0
 
@@ -299,9 +295,9 @@ for line in vcf_input:
 						val_bac += stats[group][snp]
 
 
-			# Si nb accessions	cc suffisant, recherche des snp carac
+			# If nb of accs i sufficient, looking for specifics SNP
 			if val_bac >= min_bacs_present and val_acc >= min_accs_present:
-				carac_snp = {} # Key : donnee poly ex 0/1 ou 0/0 ; Value : liste des groupes ayant des accessions comme ca
+				carac_snp = {} # Key : poly data ex 0/1 ou 0/0 ; Value : list of groups having accessions like that
 				for group in stats:
 					total_snp = 0
 					if group != '#bacs' and group != '#colors':
@@ -315,26 +311,10 @@ for line in vcf_input:
 								else:
 									carac_snp[snp].append(group)
 
-
-				############  modif 01/03
-
-				# not_homo = True
-
-				# for key in carac_snp.keys():
-				# 	if key[0] == key[2] :
-				# 		not_homo = False
-
-				# if not_homo or True:
-
-				############  fin modif 01/03	
-
-
-
-
-				if(len(list(carac_snp.keys())) > 1): # si on a au moins deux poly differents
+				if(len(list(carac_snp.keys())) > 1): # if we have at least two different poly
 					diff = 0
 
-					carac = {} #groupe:liste [valeurs] | pour les groupes et snp caracteristiques
+					carac = {} #groupe:list [values] | for groups and SNP caracterics
 					for snp_1 in carac_snp:
 						if len(carac_snp[snp_1]) == 1 :
 							if stats[carac_snp[snp_1][0]][snp_1] >= min_SNP_acc_present :
@@ -372,10 +352,6 @@ for line in vcf_input:
 										elif not(snp_1 in carac['#spont_2_spont_3']):
 											carac['#spont_2_spont_3'].append(snp_1)
 
-
-
-					#################### modif 01/03
-
 					genotype = {}
 
 					for group in stats:
@@ -386,27 +362,7 @@ for line in vcf_input:
 							if al[2] not in genotype[group]:
 								genotype[group].append(al[2])
 
-
-					# if set(genotype['#bacs']) - set(genotype['#robustum']) :
-					# 	print(genotype, set(genotype['#bacs']) - set(genotype['#robustum']))
-
-
-					# Present dans WGS mais pas dans bac
-					# if len(carac) and set(genotype['#robustum']) - set(genotype['#bacs'])  :
-
-
-
-
-					# recherche dans BAC et pas dans WGS
-					# if len(carac) and set(genotype['#bacs']) - set(genotype['#robustum']) :
-
-
-
-					################## fin modif 01/03
-
 					if len(carac):
-
-
 					# verify if at least one bac is going to be colored
 
 						color = 0
@@ -427,7 +383,7 @@ for line in vcf_input:
 									
 
 
-						# if not(color) or True: # modif 01/03
+						# if not(color) or True:
 						if color: 
 							if column_tab == 256:
 								pop+=1
@@ -488,10 +444,6 @@ for line in vcf_input:
 
 												snp_output = first_el + '/' + last_el + ':' + str(largest_integer)
 
-												# pourcentage
-												# snp_output = first_el + '/' + last_el + ':' + str(int((largest_integer/(largest_integer+second_largest_integer)*100))) + ',' + str(int((second_largest_integer/(largest_integer+second_largest_integer)*100)))
-
-
 											else :
 
 												sentence_split =  re.split(r':+', dict_names[group][acc])
@@ -511,9 +463,6 @@ for line in vcf_input:
 												if pos_largest < pos_second_largest:
 													snp_output = first_el + '/' + last_el + ':' + str(largest_integer) + ',' + str(second_largest_integer)
 
-													# pourcentage
-													# snp_output = first_el + '/' + last_el + ':' + str(int((largest_integer/(largest_integer+second_largest_integer)*100))) + ',' + str(int((second_largest_integer/(largest_integer+second_largest_integer)*100)))
-
 													if acc == 'R570_WGS' :
 														val = "{0:.1f}".format((second_largest_integer)/((largest_integer+second_largest_integer)/12))
 														snp_output += ' - '+ str(12-float(val)) + '/' + val
@@ -523,10 +472,6 @@ for line in vcf_input:
 
 												else:
 													snp_output = last_el + '/' +  first_el + ':' + str(largest_integer) + ',' + str(second_largest_integer)
-
-													# pourcentage
-													# snp_output = first_el + '/' + last_el + ':' + str(int((second_largest_integer/(largest_integer+second_largest_integer)*100))) + ',' + str(int((largest_integer/(largest_integer+second_largest_integer)*100)))
-
 
 													if acc == 'R570_WGS' :
 														val = "{0:.1f}".format((second_largest_integer)/((largest_integer+second_largest_integer)/12))
@@ -565,12 +510,10 @@ for line in vcf_input:
 
 									else:
 										if group == "#bacs" :
-
 											bool_test = 1
-											# MODIF 12/0 /////
-											for el in flat_list_snp_value : #snp_value : list(carac.values()) # extrait snp distinctif
+											for el in flat_list_snp_value : #snp_value : list(carac.values()) # extract caracteristic SNP
 
-												# si l'accession est un bac, regarde si le bac est a l'origine du snp caracteristique (si oui, le colore de la meme couleur)
+												# if acc is a BAC, look if the BAC is at the origine of the caracteristique SNP (if yes, we color him with the same color)
 												if not(str(dict_names[group][acc][0:3]) in carac_snp) and \
 													not(any(dict_names[group][acc][0] in (list(set(carac_snp.keys()) - set(flat_list_snp_value)))[i] for i in range(0, len((list(set(carac_snp.keys()) - set(flat_list_snp_value))))))) and \
 													dict_names[group][acc][0] in el and bool_test:
@@ -584,31 +527,16 @@ for line in vcf_input:
 
 															bool_test=0
 
-											if bool_test: #si bac non caracteristique, on ne le colore pas
+											if bool_test: #if BAC not caracteristic, we don't color it
 
-
-
-												# MODIF 12/0 /////
-
-												# if dict_names[group][acc][0] != flat_list_snp_value[0][0] and dict_names[group][acc][0] != flat_list_snp_value[0][2] and dict_names[group][acc][0] != '.':
-												# 	if not acc_number :
-												# 		feuille.write(line_tab, column_tab, str(snp_output), eval(group_bis[1:]+'_border_THICK'))
-												# 	else :
-												# 		feuille.write(line_tab, column_tab, str(snp_output), eval(group_bis[1:]))
-
-												# else : 
-												 # FIN MODIF /////
 													if not acc_number:
 														feuille.write(line_tab, column_tab, str(snp_output), border_THICK)
 
 													else :
 														feuille.write(line_tab, column_tab, str(snp_output))
-
-
-
 											acc_number+=1
 
-										else: #si groupe normal non diagnostique, on ne le colore pas
+										else: #if normal group not diagostic, we don't color it
 											if not acc_number :
 												feuille.write(line_tab, column_tab, str(snp_output), border_DASHED)
 
